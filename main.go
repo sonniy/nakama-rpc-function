@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 	"database/sql"
-	"github.com/heroiclabs/nakama-common/runtime"
-	"google.golang.org/protobuf/encoding/protojson"
 	"time"
+
+	"github.com/heroiclabs/nakama-common/runtime"
 )
 
 var (
@@ -31,40 +31,16 @@ var (
 )
 
 const (
-	rpcIdRewards   = "rewards"
-	rpcIdFindMatch = "find_match"
+	rpcInfo = "processPayload"
 )
 
 // noinspection GoUnusedExportedFunction
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
+
 	initStart := time.Now()
 
-	marshaler := &protojson.MarshalOptions{
-		UseEnumNumbers: true,
-	}
-	unmarshaler := &protojson.UnmarshalOptions{
-		DiscardUnknown: false,
-	}
-
-	if err := initializer.RegisterRpc(rpcIdRewards, rpcRewards); err != nil {
-		return err
-	}
-
-	if err := initializer.RegisterRpc(rpcIdFindMatch, rpcFindMatch(marshaler, unmarshaler)); err != nil {
-		return err
-	}
-
-	if err := initializer.RegisterMatch(moduleName, func(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule) (runtime.Match, error) {
-		return &MatchHandler{
-			marshaler:        marshaler,
-			unmarshaler:      unmarshaler,
-			tfServingAddress: "http://tf:8501/v1/models/ttt:predict",
-		}, nil
-	}); err != nil {
-		return err
-	}
-
-	if err := registerSessionEvents(db, nk, initializer); err != nil {
+	if err := initializer.RegisterRpc("VersionChecker", VersionChecker); err != nil {
+		logger.Error("Unable to register RPC: %v", err)
 		return err
 	}
 
