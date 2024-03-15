@@ -91,6 +91,7 @@ func TestProcessPayload(t *testing.T) {
 			}
 		})
 	}
+	os.RemoveAll(filepath.Dir(testFilePath))
 }
 
 type testLogger struct{}
