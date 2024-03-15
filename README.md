@@ -1,137 +1,102 @@
-Nakama Project Template
+Nakama rpc function test project
 ===
+This project represent posibility of Nakama game server run custom logic using rpc call
+## Goals
+* Сreate a rpc function
+* Сover it by tests
+* Should be launched simply using a Docker
 
-> An example project template on how to set up and write custom logic in Nakama server.
+## Story
+- rpc function read a file from the disk by template __path=%type/%version.json__ (e.g. __"core/1.0.0.json"__)
+- save information to database using template __%type/%version__ as key and store __content__ of the file like value
+- If hashes are not equal, then content will be null.
+- If file doesn't exist, then return error.
+- defaults parameter: type=core, version=1.0.0, hash=null
+  
 
-The codebase shows a few simple gameplay features written in all three of the runtime framework languages supported by the server: Go, Lua, and TypeScript. The code shows how to read/write storage objects, send in-app notifications, parse JSON, update player wallets, and handle errors.
 
-For more documentation have a look at:
+## How to run
+- download a project using GitHub
+- go to project directory
+- run command `docker-compose up --build nakama`
 
-* https://heroiclabs.com/docs/nakama/server-framework/introduction/index.html
-* https://heroiclabs.com/docs/nakama/concepts/storage/
-* https://heroiclabs.com/docs/nakama/concepts/user-accounts/#virtual-wallet
-* https://heroiclabs.com/docs/nakama/concepts/notifications/
-* https://heroiclabs.com/docs/nakama/concepts/multiplayer/authoritative/
+## How to check results 
+### easy way
+- make POST request to http://127.0.0.1:7351/v2/console/api/endpoints/rpc/versionchecker via terminal
+`curl "http://127.0.0.1:7350/v2/rpc/versionchecker?http_key=defaulthttpkey" \
+	-d '"{\"type\": \"core\",\"version\": \"1.0.0\",\"hash\": \"c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2\"}"' \
+	-H 'Content-Type: application/json' \
+	-H 'Accept: application/json'`
+  
+### hard way
+- go to http://127.0.0.1:7351/
+- enter username: `admin` and password: `password`
+<img width="563" alt="image" src="https://github.com/sonniy/nakama-rpc-function/assets/564889/db312ace-e011-49e4-a769-c28035e7f18e">
 
-For a detailed guide on setting up TypeScript check out the [Setup page](https://heroiclabs.com/docs/nakama/server-framework/typescript-runtime/).
+- go to API explorer and select `versionchecker`
+<img width="570" alt="image" src="https://github.com/sonniy/nakama-rpc-function/assets/564889/5994eb96-1886-43f5-b34b-61b43cb4ba9d">
 
-__NOTE__ You can remove the Go, Lua or TypeScript code within this project to develop with just the single language you prefer.
+- put `{}` in to `Request Body` fild and press `SEND REQUEST`
+<img width="1106" alt="image" src="https://github.com/sonniy/nakama-rpc-function/assets/564889/b03fd332-f1ac-4e0e-aa2d-ebf252c9edd8">
 
-### Prerequisites
+- congratulation everything is work :)
+- you also can check more dificult request:
+`{
+  "type": "core",
+  "version": "1.0.0",
+  "hash": "c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2"
+}`
+<img width="1108" alt="image" src="https://github.com/sonniy/nakama-rpc-function/assets/564889/a64f7f16-3aca-4ef2-9b6d-ad17c5c90206">
 
-The codebase requires these development tools:
-
-* Go compiler and runtime: 1.15.2 or greater.
-* Docker Engine: 19.0.0 or greater.
-* Node v14 (active LTS) or greater.
-* Basic UNIX tools or knowledge on the Windows equivalents.
-
-### Go Dependencies
-
-The project uses Go modules which should be vendored as normal:
-
-```shell
-env GO111MODULE=on GOPRIVATE="github.com" go mod vendor
+## Reqest and responce examples
+### success, all parameters are presented, file exist
+#### request
 ```
-
-### TypeScript Dependencies
-
-The project uses NPM to manage dependencies which can be installed as normal:
-
-```shell
-npm install
+curl "http://127.0.0.1:7350/v2/rpc/versionchecker?http_key=defaulthttpkey" \
+	-d '"{\"type\": \"core\",\"version\": \"1.0.0\",\"hash\": \"c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2\"}"' \
+	-H 'Content-Type: application/json' \
+	-H 'Accept: application/json'
 ```
-
-Before you start the server you can transpile the TypeScript code to JavaScript code with the TypeScript compiler:
-
-```shell
-npx tsc
+#### response 
+```json
+{ "payload":"{\"type\":\"core\",\"version\":\"1.0.0\",\"hash\":\"c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2\",\"content\":\"nakama should read this file\"}"}
 ```
-
-The bundled JavaScript code output can be found in "build/index.js".
-
-### Start
-
-The recommended workflow is to use Docker and the compose file to build and run the game server, database resources and tensorflow-serving (AI model server).
-
-```shell
-docker-compose up --build nakama
+### half success, type/version - presented, hash - no
+#### request
 ```
-
-### Recompile / Run
-
-When the containers have been started as shown above you can replace just the game server custom code and recompile it with the `-d` option.
-
-```shell
-docker-compose up -d --build nakama
+curl "http://127.0.0.1:7350/v2/rpc/versionchecker?http_key=defaulthttpkey" \
+	-d '"{\"type\": \"core\",\"version\": \"1.0.0\"}"' \
+	-H 'Content-Type: application/json' \
+	-H 'Accept: application/json'
 ```
-
-### Stop
-
-To stop all running containers you can use the Docker compose sub-command.
-
-```shell
-docker-compose down
+#### response, content is empty
+```json
+{"payload":"{\"type\":\"core\",\"version\":\"1.0.0\",\"hash\":\"c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2\",\"content\":\"\"}"
 ```
-
-You can wipe the database and workspace with `docker-compose down -v` to remove the disk volumes.
-
-### Run RPC function
-
-A bunch of RPC IDs are registered with the server logic. A couple of these are:
-
-* "rewards" in Go or as "reward" in Lua.
-* "refreshes" in Go or as "refresh" in Lua.
-
-To execute the RPC function with cURL generated a session token:
-
-```shell
-curl "127.0.0.1:7350/v2/account/authenticate/device" --data "{\"id\": \""$(uuidgen)"\"}" --user 'defaultkey:'
+### half success, no param, params will be defaults
+#### request
 ```
-
-Take the session token in the response and use it to execute the RPC function as the user:
-
-```shell
-curl "127.0.0.1:7350/v2/rpc/rewards" -H 'Authorization: Bearer $TOKEN' --data '""'
+curl "http://127.0.0.1:7350/v2/rpc/versionchecker?http_key=defaulthttpkey" \
+	-d '"{}"' \
+	-H 'Content-Type: application/json' \
+	-H 'Accept: application/json'
 ```
-
-This will generate an RPC response on the initial response in that day and grant no more until the rollover.
-
+#### response, content is empty
+```json
+{"payload":"{\"type\":\"core\",\"version\":\"1.0.0\",\"hash\":\"c746686a45ad8d1a06fad5502596466e9de877217a9a32f2253c542a71ee10e2\",\"content\":\"\"}"
 ```
-{"payload":"{\"coins_received\":500}"}
-or
-{"payload":"{\"coins_received\":0}"}
+### unsuccess, wrong type or version
+#### request
 ```
-
-You can also skip the cURL steps and use the [Nakama Console's API Explorer](http://127.0.0.1:7351/apiexplorer) to execute the RPCs.
-
-### Authoritative Multiplayer
-
-The authoritative multiplayer example includes a match handler that defines game logic, and an RPC function players should call to find a match they can join or have the server create one for them if none are available.
-
-Running the match finder RPC function registered as RPC ID "find_match" returns one or more match IDs that fit the user's criteria:
-
-```shell
-curl "127.0.0.1:7350/v2/rpc/find_match" -H 'Authorization: Bearer $TOKEN' --data '"{}"'
+curl "http://127.0.0.1:7350/v2/rpc/versionchecker?http_key=defaulthttpkey" \
+	-d '"{\"type\":\"rpc\",\"version\":\"1.0.99\"}"' \
+	-H 'Content-Type: application/json' \
+	-H 'Accept: application/json'
 ```
-
-This will return one or more match IDs:
-
+#### response
+```json
+{"code":13,"error":{},"message":"file not found: stat rpc/1.0.99.json: no such file or directory"}
 ```
-{"payload":"{\"match_ids\":[\"match ID 1\","match ID 2\",\"...\"]}"}
-```
-
-To join one of these matches check our [matchmaker documentation](https://heroiclabs.com/docs/nakama/concepts/multiplayer/matchmaker/#join-a-match).
-
-### AI/ML model
-
-In addition to starting Nakama and database, `docker-compose.yml` file
-also defines the `tf` container, an instance of [TFX](https://www.tensorflow.org/tfx) (formerly known as `Tensorflow Serving`), a service to serve
-pre-trained machine learning models.
-The model itself is located in the [./model](./model) directory.
-
-### Contribute
-
-The development roadmap is managed as GitHub issues and pull requests are welcome. If you're interested to add a gameplay feature as a new example; which is not mentioned on the issue tracker please open one to create a discussion or drop in and discuss it in the [community forum](https://forum.heroiclabs.com).
-
-Finally, we love feedback and would love to hear from you. Please join our [Forums](https://forum.heroiclabs.com/) and connect with us today!
+# What can be done better
+- I would find out the business purpose of this logic, becaose return hash when incoming hash is different looks like security issue, probably here we can find more issue
+- I used default user for storing data, it looks no so good, but it general way to save something, so I'd dig deeper and would create my own table(nakama not recomended use other DB instead of their own, built-in one, like coocroach or postgress)
